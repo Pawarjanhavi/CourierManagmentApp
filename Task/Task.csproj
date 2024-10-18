@@ -15,4 +15,10 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Entities">
+      <HintPath>..\Entities\bin\Debug\net6.0\Entities.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

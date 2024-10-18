@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using Entities;
 using Exceptionlib;
 using DOA;
@@ -9,130 +7,186 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Creating instances of the classes
+        CourierServiceDb courierService = new CourierServiceDb();
+        bool exit = false;
 
-        // User
-        User user = new User(1, "John Doe", "john.doe@example.com", "password123", "1234567890", "123 Main St");
-        Console.WriteLine(user);
+        while (!exit)
+        {
+            ShowMenu();
+            int choice = GetMenuChoice();
 
-        // Courier
-        Courier courier = new Courier(1, "Alice Smith", "123 Elm St", "Bob Johnson", "456 Oak St", 5.0, "In Transit", "TRACK123", DateTime.Now.AddDays(3), user.UserID);
-        Console.WriteLine(courier);
+            switch (choice)
+            {
+                case 1:
+                    InsertCourier(courierService);
+                    break;
 
-        // Employee
-        Employee employee = new Employee(1, "Mark Brown", "mark.brown@example.com", "0987654321", "Courier", 3000);
-        Console.WriteLine(employee);
+                case 2:
+                    UpdateCourierStatus(courierService);
+                    break;
 
-        // Location
-        Location location = new Location(1, "Warehouse A", "789 Pine St");
-        Console.WriteLine(location);
+                case 3:
+                    RetrieveCourierDetails(courierService);
+                    break;
 
-        // Payment
-        Payment payment = new Payment(1, courier.CourierID, 50.0, DateTime.Now);
-        Console.WriteLine(payment);
+                case 4:
+                    courierService.ShowAllCouriers();
+                    break;
 
-        // Courier Company
+                case 5:
+                    courierService.GenerateShipmentStatusReport();
+                    break;
 
-        CourierCompany company1 = new CourierCompany("Fast Delivery Co.");
-        CourierCompany company2 = new CourierCompany("Express Shipping Inc.");
+                case 6:
+                    courierService.GenerateRevenueReport();
+                    break;
 
-        // Creating a CourierCompanyCollection and adding companies
-        CourierCompanyCollection companyCollection = new CourierCompanyCollection(company1);
-        companyCollection.AddCourierCompany(company2);
+                case 7:
+                    exit = true;
+                    Console.WriteLine("Exiting the application. Goodbye!");
+                    break;
 
-        // Display all courier companies
-        companyCollection.DisplayCourierCompanies();
+                default:
+                    Console.WriteLine("Invalid choice. Please choose a valid option.");
+                    break;
+            }
 
-        // Create the CourierUserServiceImpl
-        CourierUserServiceImpl userService = new CourierUserServiceImpl(company1);
+            Console.WriteLine();
+        }
+    }
 
-        // Placing an order
-        string placeOrderResult = userService.PlaceOrder(courier);
-        Console.WriteLine(placeOrderResult);
+    private static void ShowMenu()
+    {
+        Console.WriteLine("1. Insert Courier");
+        Console.WriteLine("2. Update Courier Status");
+        Console.WriteLine("3. Retrieve Courier Details");
+        Console.WriteLine("4. Show All Couriers");
+        Console.WriteLine("5. Generate Shipment Status Report");
+        Console.WriteLine("6. Generate Revenue Report");
+        Console.WriteLine("7. Exit");
+        Console.Write("Choose an option: ");
+    }
 
-        // Checking the status of the order
-        string orderStatus = userService.GetOrderStatus("TRACK123");
-        Console.WriteLine(orderStatus);
+    private static int GetMenuChoice()
+    {
+        int choice;
+        while (!int.TryParse(Console.ReadLine(), out choice) || choice < 1 || choice > 7)
+        {
+            Console.WriteLine("Invalid input. Please enter a number between 1 and 7.");
+            Console.Write("Choose an option: ");
+        }
+        return choice;
+    }
 
-        // Cancelling the order
-        bool cancelOrderResult = userService.CancelOrder("TRACK123");
-        Console.WriteLine(cancelOrderResult ? "Order cancelled successfully." : "Failed to cancel order.");
+    private static void InsertCourier(CourierServiceDb courierService)
+    {
+        try
+        {
+            int courierId = GetCourierId();
+            string senderName = GetStringInput("Enter Sender Name: ");
+            string senderAddress = GetStringInput("Enter Sender Address: ");
+            string receiverName = GetStringInput("Enter Receiver Name: ");
+            string receiverAddress = GetStringInput("Enter Receiver Address: ");
+            decimal weight = GetDecimalInput("Enter Weight: ");
+            string status = GetStringInput("Enter Status: ");
+            string trackingNumber = GetStringInput("Enter Tracking Number: ");
+            DateTime deliveryDate = GetDateInput("Enter Delivery Date (yyyy-mm-dd): ");
 
-        // Checking the status of the order after cancellation
-        string newOrderStatus = userService.GetOrderStatus("TRACK123");
-        Console.WriteLine(newOrderStatus);
+            bool insertStatus = courierService.AddCourier(courierId, senderName, senderAddress, receiverName, receiverAddress, weight, status, trackingNumber, deliveryDate);
+            Console.WriteLine(insertStatus ? "Courier inserted successfully." : "Failed to insert courier.");
+        }
+        catch (InvalidEmployeeIdException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
 
-        CourierAdminServiceImpl adminService = new CourierAdminServiceImpl(company1);
+    private static void UpdateCourierStatus(CourierServiceDb courierService)
+    {
+        try
+        {
+            int courierIdToUpdate = GetCourierId();
+            string newStatus = GetStringInput("Enter new status: ");
 
-        // Add a new courier staff member
-        int newStaffId1= adminService.AddCourierStaff("Raj Sharma", "123-456-7890");
-        Console.WriteLine($"New staff member added with ID: {newStaffId1}");
+            bool updateStatus = courierService.UpdateCourierStatus(courierIdToUpdate, newStatus);
+            Console.WriteLine(updateStatus ? "Courier status updated successfully." : "Failed to update status.");
+        }
+        catch (InvalidEmployeeIdException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
 
-        int newStaffId2 = adminService.AddCourierStaff("Ritu Pawar", "321-654-0987");
-        Console.WriteLine($"New staff member added with ID: {newStaffId2}");
+    private static void RetrieveCourierDetails(CourierServiceDb courierService)
+    {
+        try
+        {
+            int courierIdToFind = GetCourierId();
+            courierService.GetCourierDetails(courierIdToFind);
+        }
+        catch (InvalidEmployeeIdException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        catch (TrackingNumberNotFoundException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
 
+    private static int GetCourierId()
+    {
+        Console.Write("Enter Courier ID: ");
+        return GetIntegerInput();
+    }
 
-        /*var courierService = new CourierService();
+    private static int GetIntegerInput()
+    {
+        int value;
+        while (!int.TryParse(Console.ReadLine(), out value))
+        {
+            Console.Write("Invalid input. Please enter a valid integer: ");
+        }
+        return value;
+    }
 
-         // Test Withdraw Amount
-         try
-         {
-             courierService.WithdrawAmount("ABC123"); // Trying with a non-existing tracking number
-         }
-         catch (TrackingNumberNotFoundException ex)
-         {
-             Console.WriteLine($"Error: {ex.Message}");
-         }
-         catch (InvalidEmployeeIdException ex)
-         {
-             Console.WriteLine($"Error: {ex.Message}");
-         }
-         catch (Exception ex)
-         {
-             Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-         }
-         finally
-         {
-             Console.WriteLine("End of transaction for withdrawal.");
-         }
+    private static decimal GetDecimalInput(string prompt)
+    {
+        Console.Write(prompt);
+        decimal value;
+        while (!decimal.TryParse(Console.ReadLine(), out value))
+        {
+            Console.Write("Invalid input. Please enter a valid decimal value: ");
+        }
+        return value;
+    }
 
-         // Test Validate Employee ID
-         try
-         {
-             courierService.ValidateEmployeeId(9999); // Trying with a non-existing employee ID
-         }
-         catch (TrackingNumberNotFoundException ex)
-         {
-             Console.WriteLine($"Error: {ex.Message}");
-         }
-         catch (InvalidEmployeeIdException ex)
-         {
-             Console.WriteLine($"Error: {ex.Message}");
-         }
-         catch (Exception ex)
-         {
-             Console.WriteLine($"An unexpected error occurred: {ex.Message}");
-         }
-         finally
-         {
-             Console.WriteLine("End of employee validation.");
-         }
+    private static DateTime GetDateInput(string prompt)
+    {
+        Console.Write(prompt);
+        DateTime date;
+        while (!DateTime.TryParse(Console.ReadLine(), out date))
+        {
+            Console.Write("Invalid date input. Please enter a valid date (yyyy-mm-dd): ");
+        }
+        return date;
+    }
 
-         // Test valid employee ID (Optional)
-         try
-         {
-             courierService.ValidateEmployeeId(1001); // This ID exists
-             Console.WriteLine("Employee ID is valid.");
-         }
-         catch (InvalidEmployeeIdException ex)
-         {
-             Console.WriteLine($"Error: {ex.Message}");
-
-
-         }*/
-
-
-
-
+    private static string GetStringInput(string prompt)
+    {
+        Console.Write(prompt);
+        return Console.ReadLine() ?? string.Empty; // Handles null case
     }
 }
